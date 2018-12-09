@@ -44,13 +44,16 @@ namespace _6
             var minY = coords.Min(c => c.Y);
             var maxY = coords.Max(c => c.Y);
 
-            bool IsInfinite(Coordinate c)
+            bool IsOnEdge(int x, int y)
             {
-                return (c.X == minX || c.X == maxX) || (c.Y == minY || c.Y == maxY);
+                return (x == minX || x == maxX) || (y == minY || y == maxY);
             }
 
+            Console.WriteLine($"Bounding box: [{minX},{minY}], [{maxX},{maxY}]");
+            
             //this would hella break if we ever encountered negative numbers...
             var grid = new Coordinate[maxX,maxY];
+            var infiniteCoords = new List<Coordinate>();
 
             for (int x = 0; x < maxX; x++)
             {
@@ -59,6 +62,11 @@ namespace _6
                     var withDistance = coords.Select(c => new {Distance =  ManhattanDistance(x, y, c), Coordinate = c});
                     var groupedByDistance = withDistance.GroupBy(c => c.Distance);
                     var closest = groupedByDistance.OrderBy(g => g.Key).First();
+
+                    if(IsOnEdge(x, y))
+                    {
+                        infiniteCoords.AddRange(closest.Select(c => c.Coordinate));
+                    }
 
                     if(closest.Count() == 1)
                     {
@@ -69,8 +77,8 @@ namespace _6
 
             var enumerableGrid = grid.Cast<Coordinate>();
             var nonNull = enumerableGrid.Where(c => c != null);
-            var nonInfinite = nonNull.Where(c => !IsInfinite(c));
-            var biggestAreaCount = nonInfinite.GroupBy(c => c.ID).Max(c => c.Count());
+            var nonInfiniteRegions = nonNull.Where(c => !infiniteCoords.Contains(c)).GroupBy(c => c.ID);
+            var biggestAreaCount = nonInfiniteRegions.Max(c => c.Count());
 
             Console.WriteLine($"Biggest count: {biggestAreaCount}");
         }
